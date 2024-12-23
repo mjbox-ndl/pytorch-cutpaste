@@ -2,6 +2,7 @@ from torch.utils.data import Dataset
 from pathlib import Path
 from PIL import Image
 from joblib import Parallel, delayed
+from torchvision import transforms
 
 class Repeat(Dataset):
     def __init__(self, org_dataset, new_length):
@@ -20,7 +21,8 @@ class MVTecAT(Dataset):
     Link: https://www.mvtec.com/company/research/datasets/mvtec-ad
     """
 
-    def __init__(self, root_dir, defect_name, size, transform=None, mode="train"):
+    def __init__(self, root_dir, defect_name, size, transform=None, mode="train", 
+        synth_path=None, before_transform=None, after_transform=None):
         """
         Args:
             root_dir (string): Directory with the MVTec AD dataset.
@@ -30,7 +32,10 @@ class MVTecAT(Dataset):
         """
         self.root_dir = Path(root_dir)
         self.defect_name = defect_name
+        self.synth_path = synth_path
         self.transform = transform
+        self.before_transform = before_transform
+        self.after_transform = after_transform
         self.mode = mode
         self.size = size
         
@@ -42,6 +47,23 @@ class MVTecAT(Dataset):
             #self.imgs = [Image.open(file).resize((size,size)).convert("RGB") for file in self.image_names]
             self.imgs = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.image_names)
             print(f"loaded {len(self.imgs)} images")
+
+            if synth_path is not None:
+                colorJitter = 0.2
+                self.synth_transform = transforms.Compose([])
+                self.synth_transform.transforms.append(
+                    transforms.ColorJitter(brightness = colorJitter,
+                                        contrast = colorJitter,
+                                        saturation = colorJitter,
+                                        hue = 0.1)
+                )
+                self.synth_transform.transforms.append(
+                    transforms.RandomHorizontalFlip()
+                )
+                self.synth_image_names = list(Path(synth_path).glob("*.png"))
+                self.imgs_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_image_names)
+                print(f"loaded {len(self.imgs_synth)} imgs_synth")
+                
         else:
             #test mode
             self.image_names = list((self.root_dir / defect_name / "test").glob(str(Path("*") / "*.png")))
@@ -56,6 +78,13 @@ class MVTecAT(Dataset):
             img = self.imgs[idx].copy()
             if self.transform is not None:
                 img = self.transform(img)
+            # print(len(img), img[0].shape)
+            if self.synth_path is not None:
+                synth = self.imgs_synth[idx % len(self.imgs_synth)].copy()
+                synth = self.before_transform(synth)
+                synth = self.synth_transform(synth)
+                synth = self.after_transform(synth)
+                img = (*img, synth)
             return img
         else:
             filename = self.image_names[idx]

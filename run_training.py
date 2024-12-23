@@ -18,6 +18,13 @@ from cutpaste import CutPasteNormal,CutPasteScar, CutPaste3Way, CutPasteUnion, c
 from model import ProjectionNet
 from eval import eval_model
 from utils import str2bool
+from copy import deepcopy
+import sys
+# sys.path.append("../ad-dataset-generation/tools")
+# from tev import Tev
+# tev = Tev()
+import os
+import wandb
 
 def run_training(data_type="screw",
                  model_dir="models",
@@ -32,13 +39,15 @@ def run_training(data_type="screw",
                  cutpate_type=CutPasteNormal,
                  device = "cuda",
                  workers=8,
-                 size = 256):
+                 size = 256,
+                 synth_dir=None,
+                 weight_decay=0.00003,):
     torch.multiprocessing.freeze_support()
     # TODO: use script params for hyperparameter
     # Temperature Hyperparameter currently not used
     temperature = 0.2
 
-    weight_decay = 0.00003
+    
     momentum = 0.9
     #TODO: use f strings also for the date LOL
     model_name = f"model-{data_type}" + '-{date:%Y-%m-%d_%H_%M_%S}'.format(date=datetime.datetime.now() )
@@ -47,20 +56,26 @@ def run_training(data_type="screw",
     min_scale = 1
 
     # create Training Dataset and Dataloader
+    before_cutpaste_transform = transforms.Compose([])
     after_cutpaste_transform = transforms.Compose([])
+    train_transform = transforms.Compose([])
+
+    #before_cutpaste_transform.transforms.append(transforms.RandomResizedCrop(size, scale=(min_scale,1)))
+    before_cutpaste_transform.transforms.append(transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1))
+    # before_cutpaste_transform.transforms.append(transforms.GaussianBlur(int(size/10), sigma=(0.1,2.0)))
+    before_cutpaste_transform.transforms.append(transforms.Resize((size,size)))
+
     after_cutpaste_transform.transforms.append(transforms.ToTensor())
     after_cutpaste_transform.transforms.append(transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                                     std=[0.229, 0.224, 0.225]))
 
-    train_transform = transforms.Compose([])
-    #train_transform.transforms.append(transforms.RandomResizedCrop(size, scale=(min_scale,1)))
-    train_transform.transforms.append(transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.1))
-    # train_transform.transforms.append(transforms.GaussianBlur(int(size/10), sigma=(0.1,2.0)))
-    train_transform.transforms.append(transforms.Resize((size,size)))
+    train_transform = deepcopy(before_cutpaste_transform)
     train_transform.transforms.append(cutpate_type(transform = after_cutpaste_transform))
     # train_transform.transforms.append(transforms.ToTensor())
 
-    train_data = MVTecAT("Data", data_type, transform = train_transform, size=int(size * (1/min_scale)))
+    train_data = MVTecAT("Data", data_type, transform = train_transform, size=int(size * (1/min_scale)), 
+        synth_path=synth_dir, before_transform=before_cutpaste_transform, after_transform=after_cutpaste_transform)
+
     dataloader = DataLoader(Repeat(train_data, 3000), batch_size=batch_size, drop_last=True,
                             shuffle=True, num_workers=workers, collate_fn=cut_paste_collate_fn,
                             persistent_workers=True, pin_memory=True, prefetch_factor=5)
@@ -71,6 +86,9 @@ def run_training(data_type="screw",
     # create Model:
     head_layers = [512]*head_layer+[128]
     num_classes = 2 if cutpate_type is not CutPaste3Way else 3
+    if synth_dir is not None:
+        num_classes += 1
+
     model = ProjectionNet(pretrained=pretrained, head_layers=head_layers, num_classes=num_classes)
     model.to(device)
 
@@ -84,6 +102,7 @@ def run_training(data_type="screw",
         #scheduler = None
     elif optim_name == "adam":
         optimizer = optim.Adam(model.parameters(), lr=learninig_rate, weight_decay=weight_decay)
+        # scheduler = CosineAnnealingWarmRestarts(optimizer, epochs)
         scheduler = None
     else:
         print(f"ERROR unkown optimizer: {optim_name}")
@@ -111,7 +130,12 @@ def run_training(data_type="screw",
 
         xc = torch.cat(xs, axis=0)
         embeds, logits = model(xc)
-        
+        # print(len(xs), xs[0].shape)
+        # tev.tev_show_tensor(xs[0][0], 'Original Image')
+        # tev.tev_show_tensor(xs[1][0], '3-ways 0')
+        # tev.tev_show_tensor(xs[2][0], '3-ways 1')
+        # tev.tev_show_tensor(xs[3][0], 'synthetic')
+        # break
 #         embeds = F.normalize(embeds, p=2, dim=1)
 #         embeds1, embeds2 = torch.split(embeds,x1.size(0),dim=0)
 #         ip = torch.matmul(embeds1, embeds2.T)
@@ -150,6 +174,10 @@ def run_training(data_type="screw",
 
         writer.add_scalar('epoch', epoch, step)
 
+        wandb.log({
+            'train/loss': loss.item(), 
+            'train/acc': accuracy.item(),
+            })
         # run tests
         if test_epochs > 0 and epoch % test_epochs == 0:
             # run auc calculation
@@ -167,6 +195,9 @@ def run_training(data_type="screw",
                                 #train_embed=batch_embeds)
             model.train()
             writer.add_scalar('eval_auc', roc_auc, step)
+            wandb.log({
+                'eval/roc_auc': roc_auc.item(),
+                })
 
 
     torch.save(model.state_dict(), model_dir / f"{model_name}.tch")
@@ -210,6 +241,10 @@ if __name__ == '__main__':
     
     parser.add_argument('--workers', default=8, type=int, help="number of workers to use for data loading (default:8)")
 
+    parser.add_argument('--synth_dir', default=None, type=str, help='synthetic data folder (default: None)')
+
+    parser.add_argument('--weight_decay', default=0.00003, type=float,
+                        help='weight decay (default: 0.00003)')
 
     args = parser.parse_args()
     print(args)
@@ -246,6 +281,12 @@ if __name__ == '__main__':
     with open(Path(args.model_dir) / "run_config.txt", "w") as f:
         f.write(str(args))
 
+    wandb.init(
+        project=f'cutpaste_{"_".join(types)}',
+        name=f'{os.path.basename(args.model_dir)}',
+        config=args
+    )
+
     for data_type in types:
         print(f"training {data_type}")
         run_training(data_type,
@@ -260,4 +301,6 @@ if __name__ == '__main__':
                      head_layer=args.head_layer,
                      device=device,
                      cutpate_type=variant,
-                     workers=args.workers)
+                     workers=args.workers,
+                     synth_dir=args.synth_dir,
+                     weight_decay=args.weight_decay)
