@@ -25,6 +25,7 @@ import sys
 # tev = Tev()
 import os
 import wandb
+import json
 
 def run_training(data_type="screw",
                  model_dir="models",
@@ -41,7 +42,8 @@ def run_training(data_type="screw",
                  workers=8,
                  size = 256,
                  synth_dir=None,
-                 weight_decay=0.00003,):
+                 weight_decay=0.00003,
+                 idx=0):
     torch.multiprocessing.freeze_support()
     # TODO: use script params for hyperparameter
     # Temperature Hyperparameter currently not used
@@ -87,7 +89,7 @@ def run_training(data_type="screw",
     head_layers = [512]*head_layer+[128]
     num_classes = 2 if cutpate_type is not CutPaste3Way else 3
     if synth_dir is not None:
-        num_classes += 1
+        num_classes += 1 if cutpate_type is not CutPaste3Way else 2
 
     model = ProjectionNet(pretrained=pretrained, head_layers=head_layers, num_classes=num_classes)
     model.to(device)
@@ -116,6 +118,7 @@ def run_training(data_type="screw",
     dataloader_inf =  get_data_inf()
     # From paper: "Note that, unlike conventional definition for an epoch,
     #              we define 256 parameter update steps as one epoch.
+    best_auc = [{'epoch':0, 'auc':0}]
     for step in tqdm(range(epochs)):
         epoch = int(step / 1)
         if epoch == freeze_resnet:
@@ -193,6 +196,11 @@ def run_training(data_type="screw",
                                 show_training_data=False,
                                 model=model)
                                 #train_embed=batch_embeds)
+            if roc_auc > best_auc[-1]['auc']:
+                best_auc.append({'epoch':epoch, 'auc':roc_auc})
+                torch.save(model.state_dict(), model_dir / f"{model_name}_best_{idx}.tch")
+                with open(model_dir / f"{model_name}_best_auc_{idx}.json", "w") as f:
+                    json.dump(best_auc, f, indent=4)
             model.train()
             writer.add_scalar('eval_auc', roc_auc, step)
             wandb.log({
@@ -200,7 +208,7 @@ def run_training(data_type="screw",
                 })
 
 
-    torch.save(model.state_dict(), model_dir / f"{model_name}.tch")
+    torch.save(model.state_dict(), model_dir / f"{model_name}_{idx}.tch")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training defect detection as described in the CutPaste Paper.')
@@ -245,6 +253,9 @@ if __name__ == '__main__':
 
     parser.add_argument('--weight_decay', default=0.00003, type=float,
                         help='weight decay (default: 0.00003)')
+
+    parser.add_argument('--idx', default=0, type=int,
+                        help='index of the run (default: 0)')   
 
     args = parser.parse_args()
     print(args)
@@ -303,4 +314,5 @@ if __name__ == '__main__':
                      cutpate_type=variant,
                      workers=args.workers,
                      synth_dir=args.synth_dir,
-                     weight_decay=args.weight_decay)
+                     weight_decay=args.weight_decay,
+                     idx=args.idx)

@@ -60,7 +60,8 @@ class MVTecAT(Dataset):
                 self.synth_transform.transforms.append(
                     transforms.RandomHorizontalFlip()
                 )
-                self.synth_image_names = list(Path(synth_path).glob("*.png"))
+                self.synth_image_names = list(Path(synth_path).rglob("*.png"))
+                # self.synth_image_names = list(Path(synth_path).glob(str(Path("*") / "*.png")))
                 self.imgs_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_image_names)
                 print(f"loaded {len(self.imgs_synth)} imgs_synth")
                 
@@ -81,10 +82,13 @@ class MVTecAT(Dataset):
             # print(len(img), img[0].shape)
             if self.synth_path is not None:
                 synth = self.imgs_synth[idx % len(self.imgs_synth)].copy()
-                synth = self.before_transform(synth)
-                synth = self.synth_transform(synth)
-                synth = self.after_transform(synth)
-                img = (*img, synth)
+                synth = self.transform(synth)
+
+                # img = self.before_transform(img)
+                # img = self.synth_transform(img)
+                # img = self.after_transform(img)
+                img = (*img, *synth[1:])
+                
             return img
         else:
             filename = self.image_names[idx]
