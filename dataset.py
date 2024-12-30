@@ -38,7 +38,7 @@ class MVTecAT(Dataset):
         self.after_transform = after_transform
         self.mode = mode
         self.size = size
-        
+        self.synth_pass_names = []
         # find test images
         if self.mode == "train":
             self.image_names = list((self.root_dir / defect_name / "train" / "good").glob("*.png"))
@@ -60,35 +60,40 @@ class MVTecAT(Dataset):
                 self.synth_transform.transforms.append(
                     transforms.RandomHorizontalFlip()
                 )
-                self.synth_image_names = list(Path(synth_path).rglob("*.png"))
+
+                self.synth_pass_names = sorted(list(Path(synth_path).glob(str(Path("pass") / "*.png"))))
+                self.synth_fail_names = sorted(list(Path(synth_path).glob(str(Path("fail") / "*.png"))))
                 # self.synth_image_names = list(Path(synth_path).glob(str(Path("*") / "*.png")))
-                self.imgs_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_image_names)
-                print(f"loaded {len(self.imgs_synth)} imgs_synth")
+                self.imgs_pass_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_pass_names)
+                self.imgs_fail_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_fail_names)
+                print(f"loaded {len(self.imgs_pass_synth)} imgs_synth")
                 
         else:
             #test mode
             self.image_names = list((self.root_dir / defect_name / "test").glob(str(Path("*") / "*.png")))
             
     def __len__(self):
-        return len(self.image_names)
+        return len(self.image_names) + len(self.synth_pass_names)
 
     def __getitem__(self, idx):
         if self.mode == "train":
             # img = Image.open(self.image_names[idx])
             # img = img.convert("RGB")
-            img = self.imgs[idx].copy()
-            if self.transform is not None:
-                img = self.transform(img)
-            # print(len(img), img[0].shape)
-            if self.synth_path is not None:
-                synth = self.imgs_synth[idx % len(self.imgs_synth)].copy()
-                synth = self.transform(synth)
-
-                # img = self.before_transform(img)
-                # img = self.synth_transform(img)
-                # img = self.after_transform(img)
-                img = (*img, *synth[1:])
-                
+            if idx < len(self.imgs):
+                img = self.imgs[idx].copy()
+                if self.transform is not None:
+                    img = self.transform(img)
+            else:
+                idx = idx - len(self.imgs)
+                _pass = self.imgs_pass_synth[idx].copy()
+                _fail = self.imgs_fail_synth[idx].copy()
+                if self.transform is not None:
+                    _pass = self.transform(_pass)
+                    _fail = self.transform(_fail)
+                    img = (_pass[0], *_fail[1:])
+                else:
+                    img = (_pass, _fail)
+                    
             return img
         else:
             filename = self.image_names[idx]
