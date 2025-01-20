@@ -101,9 +101,6 @@ def run_training(data_type="screw",
     # create Model:
     head_layers = [512]*head_layer+[128]
     num_classes = 2 if cutpate_type is not CutPaste3Way else 3
-    # if synth_dir is not None:
-    #     # num_classes += 2 if cutpate_type is not CutPaste3Way else 3
-    #     num_classes += 1
 
     model = ProjectionNet(pretrained=pretrained, head_layers=head_layers, num_classes=num_classes, feature_extractor_name=fe_name)
     model.to(device)

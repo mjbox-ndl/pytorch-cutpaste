@@ -3,7 +3,7 @@ from pathlib import Path
 from PIL import Image
 from joblib import Parallel, delayed
 from torchvision import transforms
-
+import os
 class Repeat(Dataset):
     def __init__(self, org_dataset, new_length):
         self.org_dataset = org_dataset
@@ -39,7 +39,6 @@ class MVTecAT(Dataset):
         self.mode = mode
         self.size = size
         self.synth_pass_names = []
-        # find test images
         if self.mode == "train":
             self.image_names = list((self.root_dir / defect_name / "train" / "good").glob("*.png"))
             print("loading images")
@@ -49,7 +48,7 @@ class MVTecAT(Dataset):
             print(f"loaded {len(self.imgs)} images")
 
             if synth_path is not None:
-                colorJitter = 0.2
+                colorJitter = 0.1
                 self.synth_transform = transforms.Compose([])
                 self.synth_transform.transforms.append(
                     transforms.ColorJitter(brightness = colorJitter,
@@ -67,7 +66,6 @@ class MVTecAT(Dataset):
                 self.imgs_pass_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_pass_names)
                 self.imgs_fail_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_fail_names)
                 print(f"loaded {len(self.imgs_pass_synth)} imgs_synth")
-                
         else:
             #test mode
             self.image_names = list((self.root_dir / defect_name / "test").glob(str(Path("*") / "*.png")))
@@ -93,7 +91,6 @@ class MVTecAT(Dataset):
                     img = (_pass[0], *_fail[1:])
                 else:
                     img = (_pass, _fail)
-                    
             return img
         else:
             filename = self.image_names[idx]
