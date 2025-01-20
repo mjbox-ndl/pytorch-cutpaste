@@ -25,6 +25,18 @@ import sys
 # tev = Tev()
 import os
 import wandb
+import json
+
+import numpy as np
+import random
+
+def setup_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    np.random.seed(seed)
+    random.seed(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
 
 def run_training(data_type="screw",
                  model_dir="models",
@@ -41,7 +53,10 @@ def run_training(data_type="screw",
                  workers=8,
                  size = 256,
                  synth_dir=None,
-                 weight_decay=0.00003,):
+                 weight_decay=0.00003,
+                 fe_name='resnet18',
+                 idx=0, 
+                 use_wandb=False):
     torch.multiprocessing.freeze_support()
     # TODO: use script params for hyperparameter
     # Temperature Hyperparameter currently not used
@@ -87,7 +102,7 @@ def run_training(data_type="screw",
     head_layers = [512]*head_layer+[128]
     num_classes = 2 if cutpate_type is not CutPaste3Way else 3
 
-    model = ProjectionNet(pretrained=pretrained, head_layers=head_layers, num_classes=num_classes)
+    model = ProjectionNet(pretrained=pretrained, head_layers=head_layers, num_classes=num_classes, feature_extractor_name=fe_name)
     model.to(device)
 
     if freeze_resnet > 0 and pretrained:
@@ -114,6 +129,7 @@ def run_training(data_type="screw",
     dataloader_inf =  get_data_inf()
     # From paper: "Note that, unlike conventional definition for an epoch,
     #              we define 256 parameter update steps as one epoch.
+    best_auc = [{'epoch':0, 'auc':0}]
     for step in tqdm(range(epochs)):
         epoch = int(step / 1)
         if epoch == freeze_resnet:
@@ -172,10 +188,11 @@ def run_training(data_type="screw",
 
         writer.add_scalar('epoch', epoch, step)
 
-        wandb.log({
-            'train/loss': loss.item(), 
-            'train/acc': accuracy.item(),
-            })
+        if use_wandb:
+            wandb.log({
+                'train/loss': loss.item(), 
+                'train/acc': accuracy.item(),
+                })
         # run tests
         if test_epochs > 0 and epoch % test_epochs == 0:
             # run auc calculation
@@ -191,14 +208,20 @@ def run_training(data_type="screw",
                                 show_training_data=False,
                                 model=model)
                                 #train_embed=batch_embeds)
+            if roc_auc > best_auc[-1]['auc']:
+                best_auc.append({'epoch':epoch, 'auc':roc_auc})
+                torch.save(model.state_dict(), model_dir / f"{model_name}_best_{idx}.tch")
+                with open(model_dir / f"{model_name}_best_auc_{idx}.json", "w") as f:
+                    json.dump(best_auc, f, indent=4)
             model.train()
             writer.add_scalar('eval_auc', roc_auc, step)
-            wandb.log({
-                'eval/roc_auc': roc_auc.item(),
-                })
+            if use_wandb:
+                wandb.log({
+                    'eval/roc_auc': roc_auc.item(),
+                    })
 
 
-    torch.save(model.state_dict(), model_dir / f"{model_name}.tch")
+    torch.save(model.state_dict(), model_dir / f"{model_name}_{idx}.tch")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Training defect detection as described in the CutPaste Paper.')
@@ -244,8 +267,17 @@ if __name__ == '__main__':
     parser.add_argument('--weight_decay', default=0.00003, type=float,
                         help='weight decay (default: 0.00003)')
 
+    parser.add_argument('--idx', default=0, type=int, help='index of the run (default: 0)')   
+    parser.add_argument('--seed', default=111, type=int, help='random seed (default: 111)')   
+
+    parser.add_argument('--fe_name', default='resnet18', type=str, help='feature extractor model name (default: resnet18)')
+
+    parser.add_argument('--use_wandb', default=False, action='store_true', help='use wandb for logging (default: False)')
+
     args = parser.parse_args()
     print(args)
+    setup_seed(args.seed)
+
     all_types = ['bottle',
              'cable',
              'capsule',
@@ -279,11 +311,23 @@ if __name__ == '__main__':
     with open(Path(args.model_dir) / "run_config.txt", "w") as f:
         f.write(str(args))
 
-    wandb.init(
-        project=f'cutpaste_{"_".join(types)}',
-        name=f'{os.path.basename(args.model_dir)}',
-        config=args
-    )
+    name = f'{os.path.basename(args.model_dir)}_\
+            freeze{args.freeze_resnet}_\
+            model{args.fe_name}_\
+            bn{args.batch_size}_\
+            epoch{args.epochs}_\
+            {args.variant}_\
+            head{args.head_layer}_\
+            lr{args.lr}_\
+            seed{args.seed}_\
+            {args.idx}'
+
+    if args.use_wandb:
+        wandb.init(
+            project=f'cutpaste_{"_".join(types)}',
+            name=name,
+            config=args
+        )
 
     for data_type in types:
         print(f"training {data_type}")
@@ -301,4 +345,7 @@ if __name__ == '__main__':
                      cutpate_type=variant,
                      workers=args.workers,
                      synth_dir=args.synth_dir,
-                     weight_decay=args.weight_decay)
+                     weight_decay=args.weight_decay,
+                     fe_name=args.fe_name,
+                     idx=args.idx,
+                     use_wandb=args.use_wandb)

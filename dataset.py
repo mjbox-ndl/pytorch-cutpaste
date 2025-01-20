@@ -38,7 +38,6 @@ class MVTecAT(Dataset):
         self.after_transform = after_transform
         self.mode = mode
         self.size = size
-        
         self.synth_pass_names = []
         if self.mode == "train":
             self.image_names = list((self.root_dir / defect_name / "train" / "good").glob("*.png"))
@@ -57,15 +56,16 @@ class MVTecAT(Dataset):
                                         saturation = colorJitter,
                                         hue = 0.1)
                 )
-                # self.synth_transform.transforms.append(
-                #     transforms.RandomHorizontalFlip()
-                # )
-                self.synth_pass_names = sorted(list(Path(os.path.join(synth_path, 'pass')).glob("*.png")))
-                self.synth_fail_names = sorted(list(Path(os.path.join(synth_path, 'fail')).glob("*.png")))
-                self.imgs_pass = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_pass_names)
-                self.imgs_fail = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_fail_names)
-                print(f"loaded {len(self.imgs_pass)} imgs_pass")
-                
+                self.synth_transform.transforms.append(
+                    transforms.RandomHorizontalFlip()
+                )
+
+                self.synth_pass_names = sorted(list(Path(synth_path).glob(str(Path("pass") / "*.png"))))
+                self.synth_fail_names = sorted(list(Path(synth_path).glob(str(Path("fail") / "*.png"))))
+                # self.synth_image_names = list(Path(synth_path).glob(str(Path("*") / "*.png")))
+                self.imgs_pass_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_pass_names)
+                self.imgs_fail_synth = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.synth_fail_names)
+                print(f"loaded {len(self.imgs_pass_synth)} imgs_synth")
         else:
             #test mode
             self.image_names = list((self.root_dir / defect_name / "test").glob(str(Path("*") / "*.png")))
@@ -82,13 +82,15 @@ class MVTecAT(Dataset):
                 if self.transform is not None:
                     img = self.transform(img)
             else:
-                synth_pass = self.imgs_pass[idx - len(self.imgs)].copy()
-                synth_pass = self.before_transform(synth_pass)
-                synth_pass = self.synth_transform(synth_pass)
-                synth_pass = self.after_transform(synth_pass)
-                synth_fail = self.imgs_fail[idx - len(self.imgs)].copy()
-                synth_fail = self.transform(synth_fail)
-                img = (synth_pass, *synth_fail[1:])
+                idx = idx - len(self.imgs)
+                _pass = self.imgs_pass_synth[idx].copy()
+                _fail = self.imgs_fail_synth[idx].copy()
+                if self.transform is not None:
+                    _pass = self.transform(_pass)
+                    _fail = self.transform(_fail)
+                    img = (_pass[0], *_fail[1:])
+                else:
+                    img = (_pass, _fail)
             return img
         else:
             filename = self.image_names[idx]
