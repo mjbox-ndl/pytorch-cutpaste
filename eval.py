@@ -22,9 +22,9 @@ test_data_eval = None
 test_transform = None
 cached_type = None
 
-def get_train_embeds(model, size, defect_type, transform, device):
+def get_train_embeds(model, size, defect_type, transform, device, real_dir="Data"):
     # train data / train kde
-    test_data = MVTecAT("Data", defect_type, size, transform=transform, mode="train")
+    test_data = MVTecAT(real_dir, defect_type, size, transform=transform, mode="train")
 
     dataloader_train = DataLoader(test_data, batch_size=64,
                             shuffle=False, num_workers=0)
@@ -37,7 +37,11 @@ def get_train_embeds(model, size, defect_type, transform, device):
     train_embed = torch.cat(train_embed)
     return train_embed
 
-def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256, show_training_data=True, model=None, train_embed=None, head_layer=8, density=GaussianDensityTorch()):
+def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256, show_training_data=True, model=None, train_embed=None, head_layer=8, density=GaussianDensityTorch(), real_dir="Data"):
+    # Skip evaluation if real_dir is None
+    if real_dir is None:
+        return 0.0
+
     # create test dataset
     global test_data_eval,test_transform, cached_type
 
@@ -49,7 +53,7 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
         test_transform.transforms.append(transforms.ToTensor())
         test_transform.transforms.append(transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                                             std=[0.229, 0.224, 0.225]))
-        test_data_eval = MVTecAT("Data", defect_type, size, transform = test_transform, mode="test")
+        test_data_eval = MVTecAT(real_dir, defect_type, size, transform = test_transform, mode="test")
 
     dataloader_test = DataLoader(test_data_eval, batch_size=64,
                                     shuffle=False, num_workers=0)
@@ -73,14 +77,19 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
         for x, label in dataloader_test:
             embed, logit = model(x.to(device))
 
-            # save 
+            # save
             embeds.append(embed.cpu())
             labels.append(label.cpu())
+
+    # Skip if no test data
+    if len(labels) == 0:
+        return 0.0
+
     labels = torch.cat(labels)
     embeds = torch.cat(embeds)
 
     if train_embed is None:
-        train_embed = get_train_embeds(model, size, defect_type, test_transform, device)
+        train_embed = get_train_embeds(model, size, defect_type, test_transform, device, real_dir=real_dir)
 
     # norm embeds
     embeds = torch.nn.functional.normalize(embeds, p=2, dim=1)
@@ -90,7 +99,7 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
     if save_plots:
         eval_dir = Path("eval") / modelname
         eval_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # plot tsne
         # also show some of the training data
         show_training_data = False
@@ -112,7 +121,7 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
             train_transform.transforms.append(CutPaste(transform=after_cutpaste_transform))
             # train_transform.transforms.append(transforms.ToTensor())
 
-            train_data = MVTecAT("Data", defect_type, transform=train_transform, size=size)
+            train_data = MVTecAT(real_dir, defect_type, transform=train_transform, size=size)
             dataloader_train = DataLoader(train_data, batch_size=32,
                         shuffle=True, num_workers=8, collate_fn=cut_paste_collate_fn,
                         persistent_workers=True)
@@ -128,7 +137,7 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
                     y = torch.tensor([0, 1])
                     y = y.repeat_interleave(x1.size(0))
 
-                    # save 
+                    # save
                     train_embeds.append(embed.cpu())
                     train_labels.append(y)
                     # only less data
@@ -145,17 +154,15 @@ def eval_model(modelname, defect_type, device="cpu", save_plots=False, size=256,
         plot_tsne(tsne_labels, tsne_embeds, eval_dir / "tsne.png")
     else:
         eval_dir = Path("unused")
-    
+
     print(f"using density estimation {density.__class__.__name__}")
     density.fit(train_embed)
     distances = density.predict(embeds)
     #TODO: set threshold on mahalanobis distances and use "real" probabilities
 
     roc_auc = plot_roc(labels, distances, eval_dir / "roc_plot.png", modelname=modelname, save_plots=save_plots)
-    
 
     return roc_auc
-    
 
 def plot_roc(labels, scores, filename, modelname="", save_plots=False):
 
@@ -199,7 +206,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--model_dir', default="models",
                     help=' directory contating models to evaluate (default: models)')
-    
+
     parser.add_argument('--cuda', default=False, type=str2bool,
                     help='use cuda for model predictions (default: False)')
 
@@ -211,7 +218,7 @@ if __name__ == '__main__':
 
     parser.add_argument('--save_plots', default=True, type=str2bool,
                     help='save TSNE and roc plots')
-    
+
 
     args = parser.parse_args()
 
@@ -232,12 +239,12 @@ if __name__ == '__main__':
              'transistor',
              'wood',
              'zipper']
-    
+
     if args.type == "all":
         types = all_types
     else:
         types = args.type.split(",")
-    
+
     device = "cuda" if args.cuda else "cpu"
 
     density_mapping = {
@@ -259,7 +266,7 @@ if __name__ == '__main__':
         print(f"{data_type} AUC: {roc_auc}")
         obj["defect_type"].append(data_type)
         obj["roc_auc"].append(roc_auc)
-    
+
     # save pandas dataframe
     eval_dir = Path("eval") / args.model_dir
     eval_dir.mkdir(parents=True, exist_ok=True)

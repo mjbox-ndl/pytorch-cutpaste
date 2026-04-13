@@ -21,14 +21,15 @@ class MVTecAT(Dataset):
     Link: https://www.mvtec.com/company/research/datasets/mvtec-ad
     """
 
-    def __init__(self, root_dir, defect_name, size, transform=None, mode="train", 
-        synth_path=None, before_transform=None, after_transform=None):
+    def __init__(self, root_dir, defect_name, size, transform=None, mode="train",
+        synth_path=None, before_transform=None, after_transform=None, num_real=-1):
         """
         Args:
             root_dir (string): Directory with the MVTec AD dataset.
             defect_name (string): defect to load.
             transform: Transform to apply to data
             mode: "train" loads training samples "test" test samples default "train"
+            num_real: Number of real samples to use for training, -1 for all (default: -1)
         """
         self.root_dir = Path(root_dir)
         self.defect_name = defect_name
@@ -41,11 +42,14 @@ class MVTecAT(Dataset):
         self.synth_pass_names = []
         if self.mode == "train":
             self.image_names = list((self.root_dir / defect_name / "train" / "good").glob("*.png"))
+            # Limit number of real samples if num_real is specified
+            if num_real >= 0 and num_real <= len(self.image_names):
+                self.image_names = self.image_names[:num_real]
             print("loading images")
             # during training we cache the smaller images for performance reasons (not a good coding style)
             #self.imgs = [Image.open(file).resize((size,size)).convert("RGB") for file in self.image_names]
             self.imgs = Parallel(n_jobs=10)(delayed(lambda file: Image.open(file).resize((size,size)).convert("RGB"))(file) for file in self.image_names)
-            print(f"loaded {len(self.imgs)} images")
+            print(f"loaded {len(self.imgs)} images (num_real={num_real})")
 
             if synth_path is not None:
                 colorJitter = 0.1
@@ -69,7 +73,7 @@ class MVTecAT(Dataset):
         else:
             #test mode
             self.image_names = list((self.root_dir / defect_name / "test").glob(str(Path("*") / "*.png")))
-            
+
     def __len__(self):
         return len(self.image_names) + len(self.synth_pass_names)
 

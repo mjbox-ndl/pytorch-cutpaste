@@ -1,8 +1,9 @@
 torch
 torchvision
-sklearn
+scikit-learn
 pandas
 seaborn
 tqdm
 tensorboard
 wandb
+scikit-image

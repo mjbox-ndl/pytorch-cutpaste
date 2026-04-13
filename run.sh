@@ -522,17 +522,242 @@ idx=4
 #     --model_dir screw2 --use_wandb 
 # done
 
-idx=5
-for seed in `seq 2029 2029`
-do
-    # python run_training.py --head_layer 2 --cuda 1 --type screw \
-    # --epochs 5010 --lr 0.003 --test_epochs 100 --variant 3way --idx ${idx} \
-    # --synth_dir /media/nvme0n1p1/projects/ad-dataset-generation/preprocessing/rendering/outputs_20241220_210 \
-    # --fe_name resnet18 --freeze_resnet 20 --seed ${seed} --batch_size 64 \
-    # --model_dir synthetic2 --use_wandb 
+# idx=5
+# for seed in `seq 2029 2029`
+# do
+#     # python run_training.py --head_layer 2 --cuda 1 --type screw \
+#     # --epochs 5010 --lr 0.003 --test_epochs 100 --variant 3way --idx ${idx} \
+#     # --synth_dir /media/nvme0n1p1/projects/ad-dataset-generation/preprocessing/rendering/outputs_20241220_210 \
+#     # --fe_name resnet18 --freeze_resnet 20 --seed ${seed} --batch_size 64 \
+#     # --model_dir synthetic2 --use_wandb 
 
-    python run_training.py --head_layer 2 --cuda 1 --type screw \
-    --epochs 5010 --lr 0.003 --test_epochs 100 --variant 3way --idx ${idx} \
-    --fe_name resnet18 --freeze_resnet 20 --seed ${seed} --batch_size 64 \
-    --model_dir screw2 --use_wandb 
-done
+#     python run_training.py --head_layer 2 --cuda 1 --type screw \
+#     --epochs 5010 --lr 0.003 --test_epochs 100 --variant 3way --idx ${idx} \
+#     --fe_name resnet18 --freeze_resnet 20 --seed ${seed} --batch_size 64 \
+#     --model_dir screw2 --use_wandb 
+# done
+
+# idx=5
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3
+
+
+idx=5
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_bins/bin_01 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt200_260223_bin01
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_abbins/bin_050_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt50_260223_bin050
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_abbins/bin_100_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt100_260223_bin100
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_abbins/bin_150_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt150_260223_bin150
+
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_real
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt200_260227_bin02
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_real
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_total \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt200_260227_total
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_bins/bin_01_good_only \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt200_260226_goodonly_bin01
+# bin_id=00
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+#     --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+#     --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260302_bins/bin_${bin_id} \
+#     --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+#     --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+#     --model_dir pill_synt200_260302_bin${bin_id}
+
+# # bin_{00..04} for pill and pill_20260302_bins
+# # 1, 2는 이미 학습되어 있음
+# for bin_id in {03..04}; do
+#     echo "Running bin ${bin_id}--------------------------------"
+#     CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+#     --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+#     --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260302_bins/bin_${bin_id} \
+#     --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+#     --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+#     --model_dir pill_synt200_260302_bin${bin_id}
+#     echo "--------------------------------"
+# done
+
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --num_real 0 \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_bins/bin_01 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt200_260223_bin01_zeroshot
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --num_real 0 \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt200_260227_bin02_256_zeroshot
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --num_real 0 \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_total \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt200_260227_total_zeroshot
+
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256_good \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt200_260227_bin02_256_goodonly
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_total_good \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt200_260227_total_goodonly
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256_50 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt50_260227_bin02_256_50
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256_100 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt100_260227_bin02_256_100
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256_150 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt150_260227_bin02_256_150
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_bins/bin_050_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt50_260227_bin050_00
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_bins/bin_100_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt100_260227_bin100_00
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_bins/bin_150_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir screw_synt150_260227_bin150_00
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260309/bin_01_050_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt50_260309_bin01
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260309/bin_01_100_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt100_260309_bin01
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260309/bin_01_150_00 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt150_260309_bin01
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260309_bins/bin_01 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt200_260309_bin01
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type aiv_screw_3 \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/aiv_mvtec \
+# --num_real 0 \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/aiv_synthetic_screw_20260223_bins/bin_01 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir aiv_screw_3_synt200_260223_bin01_zeroshot
+
+# CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type pill \
+# --real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+# --num_real 0 \
+# --synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/pill_20260227_bins/bin_02_256 \
+# --epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+# --fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+# --model_dir pill_synt200_260227_bin02_256_zeroshot
+
+CUDA_VISIBLE_DEVICES=1 python run_training.py --head_layer 2 --cuda 1 --type screw \
+--real_dir /media/nvme0n1p1/datasets/anomaly_datasets/mvtec \
+--num_real 0 \
+--synth_dir /media/nvme0n1p1/datasets/anomaly_datasets/synthetic_topo_2026/screw_20260227_bins/bin_200_00 \
+--epochs 5010 --lr 0.003 --test_epochs 200 --variant 3way --idx ${idx} \
+--fe_name resnet18 --freeze_resnet 20 --seed 111 --batch_size 64 \
+--model_dir screw_synt200_260227_total_zeroshot

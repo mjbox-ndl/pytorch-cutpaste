@@ -39,6 +39,7 @@ def setup_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 def run_training(data_type="screw",
+                 real_dir="Data",
                  model_dir="models",
                  epochs=256,
                  pretrained=True,
@@ -55,8 +56,9 @@ def run_training(data_type="screw",
                  synth_dir=None,
                  weight_decay=0.00003,
                  fe_name='resnet18',
-                 idx=0, 
-                 use_wandb=False):
+                 idx=0,
+                 use_wandb=False,
+                 num_real=-1):
     torch.multiprocessing.freeze_support()
     # TODO: use script params for hyperparameter
     # Temperature Hyperparameter currently not used
@@ -88,8 +90,9 @@ def run_training(data_type="screw",
     train_transform.transforms.append(cutpate_type(transform = after_cutpaste_transform))
     # train_transform.transforms.append(transforms.ToTensor())
 
-    train_data = MVTecAT("Data", data_type, transform = train_transform, size=int(size * (1/min_scale)), 
-        synth_path=synth_dir, before_transform=before_cutpaste_transform, after_transform=after_cutpaste_transform)
+    train_data = MVTecAT(real_dir, data_type, transform = train_transform, size=int(size * (1/min_scale)),
+        synth_path=synth_dir, before_transform=before_cutpaste_transform, after_transform=after_cutpaste_transform,
+        num_real=num_real)
 
     dataloader = DataLoader(Repeat(train_data, 3000), batch_size=batch_size, drop_last=True,
                             shuffle=True, num_workers=workers, collate_fn=cut_paste_collate_fn,
@@ -202,11 +205,13 @@ def run_training(data_type="screw",
             # batch_embeds = torch.cat(batch_embeds)
             # print(batch_embeds.shape)
             model.eval()
-            roc_auc= eval_model(model_name, data_type, device=device,
+            roc_auc = eval_model(model_name, data_type, device=device,
                                 save_plots=False,
                                 size=size,
                                 show_training_data=False,
-                                model=model)
+                                model=model,
+                                real_dir=real_dir
+                                )
                                 #train_embed=batch_embeds)
             if roc_auc > best_auc[-1]['auc']:
                 best_auc.append({'epoch':epoch, 'auc':roc_auc})
@@ -262,7 +267,9 @@ if __name__ == '__main__':
     
     parser.add_argument('--workers', default=8, type=int, help="number of workers to use for data loading (default:8)")
 
+    parser.add_argument('--real_dir', default="Data", type=str, help='real data folder (default: Data)')
     parser.add_argument('--synth_dir', default=None, type=str, help='synthetic data folder (default: None)')
+    parser.add_argument('--num_real', default=-1, type=int, help='number of real samples to use for training, -1 for all (default: -1)')
 
     parser.add_argument('--weight_decay', default=0.00003, type=float,
                         help='weight decay (default: 0.00003)')
@@ -332,6 +339,7 @@ if __name__ == '__main__':
     for data_type in types:
         print(f"training {data_type}")
         run_training(data_type,
+                     real_dir=args.real_dir,
                      model_dir=Path(args.model_dir),
                      epochs=args.epochs,
                      pretrained=args.pretrained,
@@ -348,4 +356,5 @@ if __name__ == '__main__':
                      weight_decay=args.weight_decay,
                      fe_name=args.fe_name,
                      idx=args.idx,
-                     use_wandb=args.use_wandb)
+                     use_wandb=args.use_wandb,
+                     num_real=args.num_real)
